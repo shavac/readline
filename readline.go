@@ -2,9 +2,10 @@
 
 package readline
 
+// #include <stdio.h>
+// #include <stdlib.h>
 // #include <readline/readline.h>
 // #include <readline/history.h>
-// #include <stdlib.h>
 import "C"
 import "unsafe"
 
