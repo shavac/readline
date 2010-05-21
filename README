@@ -1,0 +1,5 @@
+Clone of http://sigpipe.org/go/readline-go/ by Michael Elkins
+
+Forked because
+* needs patching
+* goinstallable
