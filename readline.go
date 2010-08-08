@@ -10,7 +10,7 @@ import "C"
 import "unsafe"
 
 func ReadLine(prompt *string) *string {
-	var p *_C_char;
+	var p *C.char;
 
 	//readline allows an empty prompt(NULL)
 	if prompt != nil { p = C.CString(*prompt) }
