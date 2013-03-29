@@ -10,7 +10,7 @@ signal SIGWINCH handling with go codes.
 
     package main
 
-    import "readline"
+    import "github.com/shavac/readline"
 
     func main() {
 	    prompt := "by your command> ";
@@ -18,7 +18,9 @@ signal SIGWINCH handling with go codes.
     L:
 	    for {
 		    switch result := readline.ReadLine(&prompt); true {
-		    case result == nil: break L //exit loop with EOF(^D)
+		    case result == nil:
+		    	 println()
+		    	 break L //exit loop with EOF(^D)
 		    case *result != "": //ignore blank lines
 			    println(*result);
 			    readline.AddHistory(*result); //allow user to recall this line
