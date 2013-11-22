@@ -1,10 +1,8 @@
 * ReadLine Wrapper for Golang *
 ===============================
 
-Originally cloned from https://bitbucket.org/taruti/go-readline
-
-Former code compile successfully with example but panic while window resizing.So i clone and patch it with
-signal SIGWINCH handling with go codes.
+This wrapper handlers SIGWINCH, and allows you to supply a Go-based
+completion function.
 
 --------------------------------------------------------------------------
 
