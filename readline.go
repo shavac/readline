@@ -2,33 +2,19 @@
 
 package readline
 
-// TODO:
-//  implement a go-oriented command completion
-
 /*
- #cgo darwin CFLAGS: -I/opt/local/include
- #cgo darwin LDFLAGS: -L/opt/local/lib
- #cgo LDFLAGS: -lreadline
+#cgo darwin CFLAGS: -I/opt/local/include
+#cgo darwin LDFLAGS: -L/opt/local/lib
+#cgo LDFLAGS: -lreadline
 
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
- #include "readline/readline.h"
- #include "readline/history.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "readline/readline.h"
+#include "readline/history.h"
 
- char* _go_readline_strarray_at(char **strarray, int idx) 
- {
-   return strarray[idx];
- }
+extern char** completerShim(char*, int, int);
 
- int _go_readline_strarray_len(char **strarray)
- {
-   int sz = 0;
-   while (strarray[sz] != NULL) {
-     sz += 1;
-   }
-   return sz;
- }
 */
 import "C"
 import "unsafe"
@@ -47,10 +33,12 @@ func init() {
 			case syscall.SIGWINCH:
 				Resize()
 			default:
-				;
+
 			}
 		}
 	}()
+
+	C.rl_attempted_completion_function = (*C.rl_completion_func_t)(C.completerShim)
 }
 
 func Resize() {
@@ -151,24 +139,38 @@ func GetCompleterDelims() string {
 	return delims
 }
 
-//
-func CompletionMatches(text string, cbk func(text string, state int) string) []string {
-	c_text := C.CString(text)
-	defer C.free(unsafe.Pointer(c_text))
-	c_cbk := (*C.rl_compentry_func_t)(unsafe.Pointer(&cbk))
-	c_matches := C.rl_completion_matches(c_text, c_cbk)
-	n_matches := int(C._go_readline_strarray_len(c_matches))
-	matches := make([]string, n_matches)
-	for i := 0; i < n_matches; i++ {
-		matches[i] = C.GoString(C._go_readline_strarray_at(c_matches, C.int(i)))
+var completer func(string, int, int) []string
+
+// SetCompletionFunction sets the function that will be used when the user
+// invokes completion.
+func SetCompletionFunction(c func(string, int, int)[]string) {
+	completer = c
+}
+
+//export ProcessCompletion
+func ProcessCompletion(textC *C.char, start, end int) **C.char {
+	if completer == nil {
+		return nil
 	}
-	return matches
-}
 
-//
-func SetAttemptedCompletionFunction(cbk func(text string, start, end int) []string) {
-	c_cbk := (*C.rl_completion_func_t)(unsafe.Pointer(&cbk))
-	C.rl_attempted_completion_function = c_cbk
-}
+	text := C.GoString(textC)
 
-/* EOF */
+	results := completer(text, start, end)
+
+	if len(results) == 0 {
+		return nil
+	}
+
+	var c *C.char
+	ptrSize := unsafe.Sizeof(c)
+	ptr := C.malloc(C.size_t(len(results) + 1) * C.size_t(ptrSize))
+
+	for idx, value := range results {
+		element := (**C.char)(unsafe.Pointer(uintptr(ptr) + uintptr(idx)*ptrSize))
+		*element = (*C.char)(C.CString(value))
+	}
+	endElement := (**C.char)(unsafe.Pointer(uintptr(ptr) + uintptr(len(results))*ptrSize))
+	*endElement = nil
+
+	return (**C.char)(ptr)
+}
