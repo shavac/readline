@@ -1,10 +1,14 @@
-* ReadLine Wrapper for Golang *
-===============================
+# go-readline
 
-Originally cloned from https://bitbucket.org/taruti/go-readline
+go-readline is a wrapper for the
+[GNU readline library](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
+for the [Go programming language](http://golang.org).
 
-Former code compile successfully with example but panic while window resizing.So i clone and patch it with
-signal SIGWINCH handling with go codes.
+This repository contains work from multiple contributors. See the AUTHORS file
+for details.
+
+
+
 
 --------------------------------------------------------------------------
 

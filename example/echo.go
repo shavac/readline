@@ -1,19 +1,25 @@
+// Copyright 2010-2014 go-readline authors.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package main
 
-import "github.com/shavac/readline"
+import "github.com/fiorix/go-readline"
 
 func main() {
 	prompt := "> "
-	//loop until ReadLine returns nil (signalling EOF)
+
+	// Loop until Readline returns nil (signalling EOF)
 L:
 	for {
-		switch result := readline.ReadLine(&prompt); true {
+		result := readline.Readline(&prompt)
+		switch {
 		case result == nil:
 			println()
-			break L //exit loop
-		case *result != "": //ignore blank lines
+			break L // exit loop
+		case *result != "": // Ignore blank lines
 			println(*result)
-			readline.AddHistory(*result) //allow user to recall this line
+			readline.AddHistory(*result) // Allow user to recall this line
 		}
 	}
 }

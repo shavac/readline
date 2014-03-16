@@ -1,0 +1,14 @@
+Michael Elkins, original author
+http://sigpipe.org/go/readline-go/
+
+Taru Karttunen, bugfixes and support for go install
+https://bitbucket.org/taruti/go-readline/
+
+shavac, code review and bugfixes (SIGWINCH)
+https://github.com/shavac/readline
+
+Jeremy Wall, bugfix in Makefile (and LDFLAGS, also fixed by shavac)
+https://bitbucket.org/zaphar
+
+Alexandre Fiori, merged all the above and updated the documentation
+https://github.com/fiorix/go-readline

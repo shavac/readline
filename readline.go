@@ -1,34 +1,35 @@
+// Copyright 2010-2014 go-readline authors.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
 // Wrapper around the GNU readline(3) library
 
 package readline
 
-// TODO:
-//  implement a go-oriented command completion
-
 /*
- #cgo darwin CFLAGS: -I/opt/local/include
- #cgo darwin LDFLAGS: -L/opt/local/lib
- #cgo LDFLAGS: -lreadline
+#cgo darwin CFLAGS: -I/usr/local/Cellar/readline/6.2.4/include/
+#cgo darwin LDFLAGS: -L/usr/local/Cellar/readline/6.2.4/lib/
+#cgo LDFLAGS: -lreadline
 
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
- #include "readline/readline.h"
- #include "readline/history.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "readline/readline.h"
+#include "readline/history.h"
 
- char* _go_readline_strarray_at(char **strarray, int idx) 
- {
-   return strarray[idx];
- }
+char* _go_readline_strarray_at(char **strarray, int idx)
+{
+	return strarray[idx];
+}
 
- int _go_readline_strarray_len(char **strarray)
- {
-   int sz = 0;
-   while (strarray[sz] != NULL) {
-     sz += 1;
-   }
-   return sz;
- }
+int _go_readline_strarray_len(char **strarray)
+{
+	int sz = 0;
+	while (strarray[sz] != NULL) {
+		sz += 1;
+	}
+	return sz;
+}
 */
 import "C"
 import "unsafe"
@@ -36,7 +37,7 @@ import "syscall"
 import "os"
 import "os/signal"
 
-//SIGWINCH handling is here.
+// init handles window resizing on SIGWINCH.
 func init() {
 	C.rl_catch_sigwinch = 0
 	c := make(chan os.Signal, 1)
@@ -45,22 +46,25 @@ func init() {
 		for sig := range c {
 			switch sig {
 			case syscall.SIGWINCH:
-				Resize()
+				ResizeTerminal()
 			default:
-				;
+
 			}
 		}
 	}()
 }
 
-func Resize() {
+// ResizeTerminal updates the internal screen size by reading values from
+// the kernel.
+func ResizeTerminal() {
 	C.rl_resize_terminal()
 }
 
-func ReadLine(prompt *string) *string {
+// Readline prints the prompt and reads a line from the standard input.
+func Readline(prompt *string) *string {
 	var p *C.char
 
-	//readline allows an empty prompt(NULL)
+	// readline allows an empty prompt (NULL)
 	if prompt != nil {
 		p = C.CString(*prompt)
 	}
@@ -73,55 +77,55 @@ func ReadLine(prompt *string) *string {
 
 	if ret == nil {
 		return nil
-	} //EOF
+	} // EOF
 
 	s := C.GoString(ret)
 	C.free(unsafe.Pointer(ret))
 	return &s
 }
 
+// AddHistory adds a string to the end of the history list.
 func AddHistory(s string) {
 	p := C.CString(s)
 	defer C.free(unsafe.Pointer(p))
 	C.add_history(p)
 }
 
-// Parse and execute single line of a readline init file.
+// ParseAndBind parses line as if it had been read from the inputrc file
+// and performs any key bindings and variable assignments found.
 func ParseAndBind(s string) {
 	p := C.CString(s)
 	defer C.free(unsafe.Pointer(p))
 	C.rl_parse_and_bind(p)
 }
 
-// Parse a readline initialization file.
+// ReadInitFile reads keybindings and variable assignments from filename.
 // The default filename is the last filename used.
-func ReadInitFile(s string) error {
-	p := C.CString(s)
+func ReadInitFile(filename string) error {
+	p := C.CString(filename)
 	defer C.free(unsafe.Pointer(p))
-	errno := C.rl_read_init_file(p)
-	if errno == 0 {
-		return nil
+	if errno := C.rl_read_init_file(p); errno != 0 {
+		return syscall.Errno(errno)
 	}
-	return syscall.Errno(errno)
+	return nil
 }
 
-// Load a readline history file.
+// ReadHistory loads a readline history file.
 // The default filename is ~/.history.
 func ReadHistoryFile(s string) error {
 	p := C.CString(s)
 	defer C.free(unsafe.Pointer(p))
-	errno := C.read_history(p)
-	if errno == 0 {
-		return nil
+	if errno := C.read_history(p); errno != 0 {
+		return syscall.Errno(errno)
 	}
-	return syscall.Errno(errno)
+	return nil
 }
 
 var (
-	HistoryLength = -1
+	HistoryLength = -1 // Maximum number of lines in the history file.
 )
 
-// Save a readline history file.
+// WriteHistory saves a readline history file.
 // The default filename is ~/.history.
 func WriteHistoryFile(s string) error {
 	p := C.CString(s)
@@ -130,13 +134,13 @@ func WriteHistoryFile(s string) error {
 	if errno == 0 && HistoryLength >= 0 {
 		errno = C.history_truncate_file(p, C.int(HistoryLength))
 	}
-	if errno == 0 {
-		return nil
+	if errno != 0 {
+		return syscall.Errno(errno)
 	}
-	return syscall.Errno(errno)
+	return nil
 }
 
-// Set the readline word delimiters for tab-completion
+// SetCompleterDelims sets the word delimiters for tab-completion.
 func SetCompleterDelims(break_chars string) {
 	p := C.CString(break_chars)
 	//defer C.free(unsafe.Pointer(p))
@@ -144,14 +148,13 @@ func SetCompleterDelims(break_chars string) {
 	C.rl_completer_word_break_characters = p
 }
 
-// Get the readline word delimiters for tab-completion
+// GetCompleterDemils gets current word delimiters for tab-completion.
 func GetCompleterDelims() string {
-	cstr := C.rl_completer_word_break_characters
-	delims := C.GoString(cstr)
+	delims := C.GoString(C.rl_completer_word_break_characters)
 	return delims
 }
 
-//
+// CompletionMatches returns a list of completions for "text".
 func CompletionMatches(text string, cbk func(text string, state int) string) []string {
 	c_text := C.CString(text)
 	defer C.free(unsafe.Pointer(c_text))
@@ -165,7 +168,8 @@ func CompletionMatches(text string, cbk func(text string, state int) string) []s
 	return matches
 }
 
-//
+// SetAttemptedCompletionFunction sets the internal completion function to
+// the custom function "cbk".
 func SetAttemptedCompletionFunction(cbk func(text string, start, end int) []string) {
 	c_cbk := (*C.rl_completion_func_t)(unsafe.Pointer(&cbk))
 	C.rl_attempted_completion_function = c_cbk
