@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
-// Wrapper around the GNU readline(3) library
+// Go wrapper for the GNU Readline library.
+// http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
 
 package readline
 
@@ -32,10 +33,13 @@ int _go_readline_strarray_len(char **strarray)
 }
 */
 import "C"
-import "unsafe"
-import "syscall"
-import "os"
-import "os/signal"
+
+import (
+	"os"
+	"os/signal"
+	"syscall"
+	"unsafe"
+)
 
 // init handles window resizing on SIGWINCH.
 func init() {
@@ -43,13 +47,8 @@ func init() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGWINCH)
 	go func() {
-		for sig := range c {
-			switch sig {
-			case syscall.SIGWINCH:
-				ResizeTerminal()
-			default:
-
-			}
+		for _ = range c {
+			ResizeTerminal()
 		}
 	}()
 }
@@ -174,5 +173,3 @@ func SetAttemptedCompletionFunction(cbk func(text string, start, end int) []stri
 	c_cbk := (*C.rl_completion_func_t)(unsafe.Pointer(&cbk))
 	C.rl_attempted_completion_function = c_cbk
 }
-
-/* EOF */
