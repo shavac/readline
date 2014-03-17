@@ -1,4 +1,4 @@
-// Copyright 2010-2014 go-readline authors.
+// Copyright 2010-2014 go-readline authors.  All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 //
