@@ -4,7 +4,11 @@
 
 package main
 
-import "github.com/fiorix/go-readline"
+import (
+	"fmt"
+
+	"github.com/fiorix/go-readline"
+)
 
 func main() {
 	prompt := "> "
@@ -15,10 +19,12 @@ L:
 		result := readline.Readline(&prompt)
 		switch {
 		case result == nil:
-			println()
+			fmt.Println()
+			break L // exit loop
+		case *result == "exit":
 			break L // exit loop
 		case *result != "": // Ignore blank lines
-			println(*result)
+			fmt.Println(*result)
 			readline.AddHistory(*result) // Allow user to recall this line
 		}
 	}

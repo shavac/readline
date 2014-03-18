@@ -1,7 +1,7 @@
 // Copyright 2010-2014 go-readline authors.  All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-//
+
 // Go wrapper for the GNU Readline library.
 // http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
 
@@ -18,19 +18,9 @@ package readline
 #include "readline/readline.h"
 #include "readline/history.h"
 
-char* _go_readline_strarray_at(char **strarray, int idx)
-{
-	return strarray[idx];
-}
-
-int _go_readline_strarray_len(char **strarray)
-{
-	int sz = 0;
-	while (strarray[sz] != NULL) {
-		sz += 1;
-	}
-	return sz;
-}
+extern char** _go_readline_completer_shim(char* text, int start, int end);
+extern char* _go_readline_strarray_at(char **strarray, int idx);
+extern int _go_readline_strarray_len(char **strarray);
 */
 import "C"
 
@@ -41,8 +31,9 @@ import (
 	"unsafe"
 )
 
-// init handles window resizing on SIGWINCH.
+// init handles completion, and window resizing on SIGWINCH.
 func init() {
+	C.rl_attempted_completion_function = (*C.rl_completion_func_t)(C._go_readline_completer_shim)
 	C.rl_catch_sigwinch = 0
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGWINCH)
@@ -172,4 +163,39 @@ func CompletionMatches(text string, cbk func(text string, state int) string) []s
 func SetAttemptedCompletionFunction(cbk func(text string, start, end int) []string) {
 	c_cbk := (*C.rl_completion_func_t)(unsafe.Pointer(&cbk))
 	C.rl_attempted_completion_function = c_cbk
+}
+
+var DefaultCompleter func(string, int, int) []string
+
+// SetCompletionFunction sets the function that will be used when the user
+// invokes completion.
+func SetCompletionFunction(c func(string, int, int) []string) {
+	DefaultCompleter = c
+}
+
+//export ProcessCompletion
+func ProcessCompletion(textC *C.char, start, end int) **C.char {
+	if DefaultCompleter == nil {
+		return nil
+	}
+
+	text := C.GoString(textC)
+	results := DefaultCompleter(text, start, end)
+
+	if len(results) == 0 {
+		return nil
+	}
+
+	var c *C.char
+	ptrSize := unsafe.Sizeof(c)
+	ptr := C.malloc(C.size_t(len(results)+1) * C.size_t(ptrSize))
+
+	for idx, value := range results {
+		element := (**C.char)(unsafe.Pointer(uintptr(ptr) + uintptr(idx)*ptrSize))
+		*element = (*C.char)(C.CString(value))
+	}
+	endElement := (**C.char)(unsafe.Pointer(uintptr(ptr) + uintptr(len(results))*ptrSize))
+	*endElement = nil
+
+	return (**C.char)(ptr)
 }
