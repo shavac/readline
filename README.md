@@ -8,7 +8,7 @@ This repository contains work from multiple contributors. See the AUTHORS file
 for details.
 
 
-## Requirements
+### Requirements
 
 go-readline requires Go 1.2 or newer. Download the latest from:
 https://code.google.com/p/go/downloads/
@@ -29,7 +29,7 @@ On Mac OS X, via [homebrew](http://brew.sh):
 
 	brew install readline
 
-## Installation
+### Installation
 
 Make sure $GOROOT and [$GOPATH](http://golang.org/doc/code.html#GOPATH) are set, and install:
 
