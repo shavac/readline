@@ -10,5 +10,8 @@ https://github.com/shavac/readline
 Jeremy Wall, bugfix in Makefile (and LDFLAGS, also fixed by shavac)
 https://bitbucket.org/zaphar
 
+Jeremy Bowers, added a Go-based command completion routine
+https://github.com/thejerf/readline
+
 Alexandre Fiori, merged all the above and updated the documentation
 https://github.com/fiorix/go-readline
