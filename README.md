@@ -1,31 +1,36 @@
-* ReadLine Wrapper for Golang *
-===============================
+# go-readline
 
-Originally cloned from https://bitbucket.org/taruti/go-readline
+go-readline is a wrapper for the
+[GNU Readline library](http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
+for the [Go programming language](http://golang.org).
 
-Former code compile successfully with example but panic while window resizing.So i clone and patch it with
-signal SIGWINCH handling with go codes.
+This repository contains work from multiple contributors. See the AUTHORS file
+for details.
 
---------------------------------------------------------------------------
 
-    package main
+### Requirements
 
-    import "github.com/shavac/readline"
+go-readline requires Go 1.2 or newer. Download the latest from:
+https://code.google.com/p/go/downloads/
 
-    func main() {
-	    prompt := "by your command> ";
-	    //loop until ReadLine returns nil (signalling EOF)
-    L:
-	    for {
-		    switch result := readline.ReadLine(&prompt); true {
-		    case result == nil:
-		    	 println()
-		    	 break L //exit loop with EOF(^D)
-		    case *result != "": //ignore blank lines
-			    println(*result);
-			    readline.AddHistory(*result); //allow user to recall this line
-		    }
-	    }
-    }
+Git is required for installing via `go get`.
 
----------------------------------------------------------------------------
+A C compiler (gcc or clang) and the GNU Readline library are required too.
+
+On Debian and Ubuntu, install the development packages:
+
+	apt-get install build-essential libreadline-dev
+
+On CentOS and RHEL:
+
+	yum install gcc readline-devel
+
+On Mac OS X, via [homebrew](http://brew.sh):
+
+	brew install readline
+
+### Installation
+
+Make sure $GOROOT and [$GOPATH](http://golang.org/doc/code.html#GOPATH) are set, and install:
+
+	go get github.com/fiorix/go-readline
