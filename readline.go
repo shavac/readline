@@ -144,43 +144,29 @@ func GetCompleterDelims() string {
 	return delims
 }
 
-// CompletionMatches returns a list of completions for "text".
-func CompletionMatches(text string, cbk func(text string, state int) string) []string {
-	c_text := C.CString(text)
-	defer C.free(unsafe.Pointer(c_text))
-	c_cbk := (*C.rl_compentry_func_t)(unsafe.Pointer(&cbk))
-	c_matches := C.rl_completion_matches(c_text, c_cbk)
-	n_matches := int(C._go_readline_strarray_len(c_matches))
-	matches := make([]string, n_matches)
-	for i := 0; i < n_matches; i++ {
-		matches[i] = C.GoString(C._go_readline_strarray_at(c_matches, C.int(i)))
-	}
-	return matches
-}
-
-// SetAttemptedCompletionFunction sets the internal completion function to
-// the custom function "cbk".
-func SetAttemptedCompletionFunction(cbk func(text string, start, end int) []string) {
-	c_cbk := (*C.rl_completion_func_t)(unsafe.Pointer(&cbk))
-	C.rl_attempted_completion_function = c_cbk
-}
-
-var DefaultCompleter func(string, int, int) []string
+var DefaultCompleter func(string, string, int, int) []string
 
 // SetCompletionFunction sets the function that will be used when the user
 // invokes completion.
-func SetCompletionFunction(c func(string, int, int) []string) {
+//
+// The four arguments received by the function are:
+//  * The current word being matched, up to the cursor
+//  * The entire line
+//  * The begining of the current word
+//  * The end of the current word
+func SetCompletionFunction(c func(string, string, int, int) []string) {
 	DefaultCompleter = c
 }
 
 //export ProcessCompletion
-func ProcessCompletion(textC *C.char, start, end int) **C.char {
+func ProcessCompletion(textC *C.char, lineC *C.char, start, end int) **C.char {
 	if DefaultCompleter == nil {
 		return nil
 	}
 
 	text := C.GoString(textC)
-	results := DefaultCompleter(text, start, end)
+	line := C.GoString(lineC)
+	results := DefaultCompleter(text, line, start, end)
 
 	if len(results) == 0 {
 		return nil
